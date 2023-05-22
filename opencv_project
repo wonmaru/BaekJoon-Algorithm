@@ -1,0 +1,83 @@
+import cv2
+import numpy as np
+import keyboard
+
+
+# 마스크 함수 정의
+def mask_1():
+    return np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32)
+
+def mask_2():
+    return np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]], dtype=np.float32)
+
+def mask_3():
+    return np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
+
+def mask_4():
+    return np.array([[0, 1, 0], [-1, 0, -1], [0, -1, 0]], dtype=np.float32)
+
+def mask_5():
+    return np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32)
+
+
+# 마스크 함수 리스트
+masks = [mask_1, mask_2, mask_3, mask_4, mask_5]
+selected_mask = None
+
+# 마우스 이벤트 콜백 함수
+def draw_circle(event, x, y, flags, param):
+    global selected_mask, image, overlay
+
+    # 왼쪽 마우스 버튼이 눌렸을 때
+    if event == cv2.EVENT_LBUTTONDOWN:
+        # 반지름 30인 반투명 원 그리기
+        cv2.circle(overlay, (x, y), 30, (0, 0, 255, 100), -1)
+
+        # 마스크 선택
+        if keyboard.is_pressed('1'):
+            selected_mask = mask_1
+        elif keyboard.is_pressed('2'):
+            selected_mask = mask_2
+        elif keyboard.is_pressed('3'):
+            selected_mask = mask_3
+        elif keyboard.is_pressed('4'):
+            selected_mask = mask_4
+        elif keyboard.is_pressed('5'):
+            selected_mask = mask_5
+
+    # 마우스 이동 시
+    elif event == cv2.EVENT_MOUSEMOVE:
+        overlay = image.copy()
+
+        # 반투명한 원 그리기
+        cv2.circle(overlay, (x, y), 30, (0, 0, 255, 100), -1)
+
+        # 선택된 마스크 적용
+        if selected_mask is not None:
+            # 회선 마스크 적용 영역 설정
+            roi = image[max(0, y - 30):y + 30, max(0, x - 30):x + 30]
+
+            # 회선 마스크 적용
+            mask = selected_mask()
+            filtered_roi = cv2.filter2D(roi, -1, mask)
+
+            # 결과 이미지에 회선 마스크 적용
+            image[max(0, y - 30):y + 30, max(0, x - 30):x + 30] = filtered_roi
+
+    # 오른쪽 마우스 버튼이 눌렸을 때
+    elif event == cv2.EVENT_RBUTTONDOWN:
+        # 선택된 마스크 초기화
+        selected_mask = None
+        overlay = image.copy()
+
+
+# 이미지 로드
+image = cv2.imread('image1.jpg')
+image = cv2.resize(image, (1920, 1080))
+
+# 오버레이 이미지 생성
+overlay = image.copy()
+
+# 창 생성 및 마우스 이벤트 콜백 등록
+cv2.namedWindow('Input Image')
+cv
